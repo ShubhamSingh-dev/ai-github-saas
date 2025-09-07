@@ -27,8 +27,13 @@ const CreatePage = () => {
       },
       {
         onSuccess: () => {
-          toast.success("Project created successfully!");
-          refetch();
+          setTimeout(() => {
+            refetch();
+          }, 100);
+
+          toast.success(
+            "Project created successfully! Indexing in progress...",
+          );
           reset();
         },
         onError: (error) => {

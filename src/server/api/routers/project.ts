@@ -4,6 +4,21 @@ import { pollCommits } from "@/lib/github";
 import { indexGithubRepo } from "@/lib/github-loader";
 import { id } from "date-fns/locale";
 
+async function processProject(
+  projectId: string,
+  githubUrl: string,
+  githubToken?: string,
+) {
+  try {
+    console.log(`Starting background processing for project: ${projectId}`);
+    await indexGithubRepo(projectId, githubUrl, githubToken);
+    await pollCommits(projectId);
+    console.log(`Finished background processing for project: ${projectId}`);
+  } catch (error) {
+    console.error(`Failed to process project: ${projectId}`, error);
+  }
+}
+
 export const projectRouter = createTRPCRouter({
   createProject: protectedProcedure
     .input(
@@ -23,8 +38,7 @@ export const projectRouter = createTRPCRouter({
           },
         },
       });
-      await indexGithubRepo(project.id, input.githubUrl, input.githubToken);
-      await pollCommits(project.id);
+      void processProject(project.id, input.githubUrl, input.githubToken);
       return project;
     }),
   getProjects: protectedProcedure
@@ -40,7 +54,7 @@ export const projectRouter = createTRPCRouter({
   getCommits: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
-      pollCommits(input.projectId).then().catch(console.error);
+      // pollCommits(input.projectId).then().catch(console.error);
       return await ctx.db.commit.findMany({
         where: {
           projectId: input.projectId,

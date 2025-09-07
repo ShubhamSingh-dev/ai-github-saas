@@ -1,6 +1,7 @@
 // src/app/(protected)/dashboard/app-sidebar.tsx
 "use client";
 
+import { api } from "@/trpc/react";
 import {
   Bot,
   CreditCard,
@@ -56,6 +57,46 @@ export function AppSidebar() {
   const { open } = useSidebar();
   const { projects, projectId, setProjectId } = useProject();
 
+  const {
+    data: fetchedProjects,
+    status,
+    error,
+  } = api.project.getProjects.useQuery();
+
+  if (status === "pending") {
+    return (
+      <Sidebar collapsible="icon" variant="floating">
+        <SidebarHeader>
+          <div className="flex items-center gap-3">
+            <Image src="/logo.png" width={40} height={40} alt="logo" />
+            {open && (
+              <span className="text-primary/80 text-2xl font-bold">
+                TELLGIT
+              </span>
+            )}
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <div>Loading projects...</div>
+        </SidebarContent>
+      </Sidebar>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <Sidebar collapsible="icon" variant="floating">
+        <SidebarContent>
+          <div className="text-red-500">
+            Error fetching projects: {error.message}
+          </div>
+        </SidebarContent>
+      </Sidebar>
+    );
+  }
+
+  const projectsToDisplay = fetchedProjects || [];
+
   return (
     <Sidebar collapsible="icon" variant="floating">
       <SidebarHeader>
@@ -95,8 +136,8 @@ export function AppSidebar() {
           <SidebarGroupLabel>Your Projects</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {projects?.map((project) => {
-                return (
+              {projectsToDisplay.length > 0 ? (
+                projectsToDisplay.map((project) => (
                   <SidebarMenuItem key={project.name}>
                     <SidebarMenuButton asChild>
                       <Link
@@ -117,8 +158,12 @@ export function AppSidebar() {
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                );
-              })}
+                ))
+              ) : (
+                <div className="p-2 text-sm text-gray-500">
+                  No projects found.
+                </div>
+              )}
               <div className="h-2"></div>
               {open && (
                 <SidebarMenuItem>

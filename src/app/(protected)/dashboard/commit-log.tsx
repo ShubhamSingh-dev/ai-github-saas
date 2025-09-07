@@ -1,37 +1,33 @@
 // src/app/(protected)/dashboard/commit-log.tsx
 
 "use client";
-import useProject from "@/hooks/use-project";
 import { cn } from "@/lib/utils";
-import { api } from "@/trpc/react";
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 
-const CommitLog = () => {
-  const { projectId, project } = useProject();
-  if (!projectId) {
-    return null;
-  }
-
-  const { data: commits, status } = api.project.getCommits.useQuery({
-    projectId,
-  });
-
-  // Add a loading state to prevent hydration mismatch
+// The CommitLog component now receives all its necessary data via props.
+const CommitLog = ({
+  commits,
+  status,
+  project,
+}: {
+  commits: any[] | undefined;
+  status: "pending" | "success" | "error";
+  project: any | null | undefined;
+}) => {
   if (status === "pending") {
     return <div>Loading commits...</div>;
   }
 
-  // Handle the case where there are no commits or data is not yet available
-  if (!commits) {
+  if (!commits || commits.length === 0) {
     return <div>No commits found.</div>;
   }
 
   return (
     <>
       <ul className="space-y-6">
-        {commits?.map((commit, commitIdx) => {
+        {commits.map((commit, commitIdx) => {
           return (
             <li key={commit.id} className="relative flex gap-x-4">
               <div

@@ -1,4 +1,7 @@
+// src/app/(protected)/dashboard/page.tsx
+
 "use client";
+
 import { useUser } from "@clerk/nextjs";
 import { ExternalLink, Github } from "lucide-react";
 import Link from "next/link";
@@ -6,14 +9,19 @@ import React from "react";
 import useProject from "~/hooks/use-project";
 import CommitLog from "./commit-log";
 import AskQuestionCard from "./ask-question-card";
+import { api } from "~/trpc/react"; // Import the API
 
 const DashboardPage = () => {
-  const { project } = useProject();
+  const { project, projectId } = useProject();
+  const { data: commits, status } = api.project.getCommits.useQuery(
+    { projectId: projectId || "" }, // Pass a default empty string if projectId is null
+    { enabled: !!projectId }, // Only run the query if projectId exists
+  );
+
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-y-4">
         {/* Github Link */}
-
         <div className="bg-primary w-fit rounded-md px-4 py-3">
           <div className="flex items-center">
             <Github className="size-5 text-white" />
@@ -40,7 +48,8 @@ const DashboardPage = () => {
         </div>
       </div>
       <div className="mt-8"></div>
-      <CommitLog />
+      {/* Conditionally render CommitLog or a loading state based on the query status */}
+      <CommitLog commits={commits} status={status} project={project} />
     </div>
   );
 };
