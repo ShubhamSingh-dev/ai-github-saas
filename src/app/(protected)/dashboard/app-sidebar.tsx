@@ -1,3 +1,4 @@
+// src/app/(protected)/dashboard/app-sidebar.tsx
 "use client";
 
 import {
@@ -98,7 +99,10 @@ export function AppSidebar() {
                 return (
                   <SidebarMenuItem key={project.name}>
                     <SidebarMenuButton asChild>
-                      <div onClick={() => setProjectId(project.id)}>
+                      <Link
+                        href={`/dashboard?projectId=${project.id}`}
+                        onClick={() => setProjectId(project.id)}
+                      >
                         <div
                           className={cn(
                             "text-primary flex size-6 items-center justify-center rounded-sm border bg-white text-sm",
@@ -110,7 +114,7 @@ export function AppSidebar() {
                           {project.name.split("")[0]}
                         </div>
                         <span>{project.name}</span>
-                      </div>
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );

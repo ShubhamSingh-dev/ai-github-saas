@@ -1,13 +1,18 @@
+// src/hooks/use-project.ts
+import { useSearchParams } from "next/navigation";
 import React from "react";
-import { api } from "~/trpc/react";
 import { useLocalStorage } from "usehooks-ts";
+import { api } from "~/trpc/react";
 
 const useProject = () => {
-  const { data: projects } = api.project.getProjects.useQuery();
+  const searchParams = useSearchParams();
+  const projectIdFromUrl = searchParams.get("projectId");
   const [projectId, setProjectId] = useLocalStorage<string | null>(
     "TellGit-projectId",
-    "",
+    projectIdFromUrl,
   );
+
+  const { data: projects } = api.project.getProjects.useQuery();
 
   const project = projects?.find((p) => p.id === projectId) || null;
   return { project, projects, setProjectId, projectId };
