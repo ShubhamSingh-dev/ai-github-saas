@@ -1,3 +1,5 @@
+// src/app/(protected)/dashboard/commit-log.tsx
+
 "use client";
 import useProject from "@/hooks/use-project";
 import { cn } from "@/lib/utils";
@@ -11,7 +13,20 @@ const CommitLog = () => {
   if (!projectId) {
     return null;
   }
-  const { data: commits } = api.project.getCommits.useQuery({ projectId });
+
+  const { data: commits, status } = api.project.getCommits.useQuery({
+    projectId,
+  });
+
+  // Add a loading state to prevent hydration mismatch
+  if (status === "pending") {
+    return <div>Loading commits...</div>;
+  }
+
+  // Handle the case where there are no commits or data is not yet available
+  if (!commits) {
+    return <div>No commits found.</div>;
+  }
 
   return (
     <>

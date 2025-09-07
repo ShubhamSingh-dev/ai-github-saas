@@ -8,7 +8,7 @@ import useRefetch from "~/hooks/use-refetch";
 import { api } from "~/trpc/react";
 
 type formInput = {
-  repoUrl: string;
+  githubUrl: string;
   projectName: string;
   githubToken?: string;
 };
@@ -22,7 +22,7 @@ const CreatePage = () => {
     createProject.mutate(
       {
         projectName: data.projectName,
-        repoUrl: data.repoUrl,
+        githubUrl: data.githubUrl,
         githubToken: data.githubToken,
       },
       {
@@ -71,7 +71,7 @@ const CreatePage = () => {
               required
             />
             <Input
-              {...register("repoUrl", { required: true })}
+              {...register("githubUrl", { required: true })}
               placeholder="GitHub URL"
               type="url"
               required

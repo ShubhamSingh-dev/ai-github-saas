@@ -5,6 +5,7 @@ import Link from "next/link";
 import React from "react";
 import useProject from "~/hooks/use-project";
 import CommitLog from "./commit-log";
+import AskQuestionCard from "./ask-question-card";
 
 const DashboardPage = () => {
   const { project } = useProject();
@@ -34,7 +35,9 @@ const DashboardPage = () => {
         <div className="flex items-center gap-4">Tea</div>
       </div>
       <div className="mt-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-5">CArd</div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-5">
+          <AskQuestionCard />
+        </div>
       </div>
       <div className="mt-8"></div>
       <CommitLog />

@@ -1,3 +1,5 @@
+// src/lib/github.ts
+
 import { Octokit } from "octokit";
 import { db } from "../server/db";
 import axios from "axios";
@@ -39,7 +41,7 @@ export const getCommitHashes = async (
     commitHash: commit.sha as string,
     commitMessage: commit.commit.message ?? "",
     commitAuthorName: commit.commit?.author?.name ?? "",
-    commitAuthorAvatar: commit.commit.author?.avatar_url ?? "",
+    commitAuthorAvatar: commit.author?.avatar_url ?? "", // Fix is here.
     commitDate: commit.commit.author?.date ?? "",
   }));
 };
