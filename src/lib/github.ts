@@ -53,33 +53,47 @@ export const pollCommits = async (projectId: string) => {
     projectId,
     commitHashes,
   );
+
   const summaryResponses = await Promise.allSettled(
-    unprocessedCommits.map((commit) => {
-      return summariseCommit(githubUrl, commit.commitHash);
+    unprocessedCommits.map(async (commit) => {
+      try {
+        const summary = await summariseCommit(githubUrl, commit.commitHash);
+        return { ...commit, summary: summary || commit.commitMessage };
+      } catch (error) {
+        console.error(
+          `Failed to summarize commit ${commit.commitHash}:`,
+          error,
+        );
+        return { ...commit, summary: commit.commitMessage };
+      }
     }),
   );
 
-  const summaries = summaryResponses.map((response) => {
-    if (response.status === "fulfilled") {
-      return response.value as string;
-    }
-    return "";
-  });
+  const successfulSummaries = summaryResponses
+    .filter(
+      (response): response is PromiseFulfilledResult<any> =>
+        response.status === "fulfilled",
+    )
+    .map((response) => response.value);
 
-  const commits = await db.commit.createMany({
-    data: summaries.map((summary, index) => {
-      console.log(`processing commit ${index}`);
-      return {
-        projectId: projectId,
-        commitHash: unprocessedCommits[index]!.commitHash,
-        commitMessage: unprocessedCommits[index]!.commitMessage ?? "",
-        commitAuthorName: unprocessedCommits[index]!.commitAuthorName,
-        commitAuthorAvatar: unprocessedCommits[index]!.commitAuthorAvatar,
-        commitDate: unprocessedCommits[index]!.commitDate,
-        summary: summary,
-      };
-    }),
-  });
+  let commits = { count: 0 };
+
+  if (successfulSummaries.length > 0) {
+    commits = await db.commit.createMany({
+      data: successfulSummaries.map((summaryObj) => ({
+        projectId,
+        commitHash: summaryObj.commitHash,
+        commitMessage: summaryObj.commitMessage,
+        commitAuthorName: summaryObj.commitAuthorName,
+        commitAuthorAvatar: summaryObj.commitAuthorAvatar,
+        commitDate: summaryObj.commitDate,
+        summary: summaryObj.summary,
+      })),
+    });
+  } else {
+    console.log("No new commits to process or all failed.");
+  }
+
   return commits;
 };
 
