@@ -19,6 +19,7 @@ import { readStreamableValue } from "@ai-sdk/rsc";
 import CodeRefrences from "./code-refrences";
 import { api } from "@/trpc/react";
 import { toast } from "sonner";
+import useRefetch from "@/hooks/use-refetch";
 
 const AskQuestionCard = () => {
   const { project } = useProject();
@@ -32,6 +33,7 @@ const AskQuestionCard = () => {
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    // Clear previous answer before starting new stream
     setAnswer("");
     setFilesReferences([]);
     if (!project?.id) return;
@@ -48,53 +50,129 @@ const AskQuestionCard = () => {
     }
     setLoading(false);
   };
+
+  const refetch = useRefetch();
+
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[80vw]">
-          <DialogHeader>
-            <div className="flex items-center gap-2">
-              <DialogTitle>
-                <Image src="/logo.png" alt="logo" width={40} height={40} />
-              </DialogTitle>
-              <Button
-                disabled={saveAnswer.isPending}
-                variant={"outline"}
-                onClick={() => {
-                  saveAnswer.mutate(
-                    {
-                      projectId: project!.id,
-                      question,
-                      answer,
-                      filesReferences,
-                    },
-                    {
-                      onSuccess: () => {
-                        toast.success("Answer saved successfully!");
+        <DialogContent
+          className="flex max-h-[90vh] w-[98vw] !max-w-[70vw] flex-col"
+          style={{ width: "98vw", maxWidth: "98vw" }}
+        >
+          <DialogHeader className="flex-shrink-0 pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Image src="/logo.png" alt="logo" width={32} height={32} />
+                <DialogTitle className="text-lg font-semibold">
+                  TellGit Assistant
+                </DialogTitle>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  disabled={saveAnswer.isPending}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    saveAnswer.mutate(
+                      {
+                        projectId: project!.id,
+                        question,
+                        answer,
+                        filesReferences,
                       },
-                      onError: () => {
-                        toast.error("Failed to save answer!");
+                      {
+                        onSuccess: () => {
+                          toast.success("Answer saved successfully!");
+                          refetch();
+                        },
+                        onError: () => {
+                          toast.error("Failed to save answer!");
+                        },
                       },
-                    },
-                  );
-                }}
-              >
-                Save Answer
-              </Button>
+                    );
+                  }}
+                >
+                  {saveAnswer.isPending ? "Saving..." : "Save Answer"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setOpen(false)}
+                >
+                  Close
+                </Button>
+              </div>
             </div>
           </DialogHeader>
-          {answer}
-          <MDEditor.Markdown
-            source={answer}
-            className="!h-full max-h-[40vh] max-w-[70vw] overflow-scroll"
-          />
-          <div className="h-4"></div>
-          <CodeRefrences filesReferences={filesReferences ?? []} />
-          <Button type="button" onClick={() => setOpen(false)}>
-            Close
-          </Button>
+
+          {/* Scrollable content area */}
+          <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
+            {/* Question display */}
+            <div className="bg-muted flex-shrink-0 rounded-lg p-4">
+              <p className="text-muted-foreground mb-2 text-sm font-medium">
+                Question:
+              </p>
+              <p className="text-sm leading-relaxed">{question}</p>
+            </div>
+
+            {/* Answer section */}
+            <div className="flex min-h-0 flex-1 flex-col">
+              <h3 className="mb-3 flex-shrink-0 text-base font-medium">
+                Answer
+              </h3>
+              <div className="min-h-0 flex-1 overflow-hidden rounded-lg border">
+                {answer ? (
+                  <div
+                    className="h-full overflow-auto p-6"
+                    style={{ width: "100%" }}
+                  >
+                    <div style={{ width: "100%", maxWidth: "none" }}>
+                      <MDEditor.Markdown
+                        source={answer}
+                        style={{
+                          backgroundColor: "transparent",
+                          color: "inherit",
+                          width: "100%",
+                          maxWidth: "none",
+                        }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex h-full items-center justify-center p-8">
+                    <div className="text-muted-foreground text-center">
+                      {loading ? (
+                        <div className="flex items-center gap-2">
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                          <span>Asking TellGit...</span>
+                        </div>
+                      ) : (
+                        <p>
+                          Please provide a question. I'm ready to assist you
+                          with any questions about the codebase.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Code references section */}
+            {filesReferences && filesReferences.length > 0 && (
+              <div className="flex-shrink-0">
+                <h3 className="mb-3 text-base font-medium">Code References</h3>
+                <div className="max-h-80 overflow-auto rounded-lg border">
+                  <CodeRefrences filesReferences={filesReferences} />
+                </div>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
+
       <Card className="relative col-span-3">
         <CardHeader>
           <CardTitle>Ask a question</CardTitle>
@@ -104,10 +182,23 @@ const AskQuestionCard = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit}>
-            <Textarea placeholder="Which file should I edit to change the home page?" />
+            <Textarea
+              placeholder="Which file should I edit to change the home page?"
+              onChange={(e) => setQuestion(e.target.value)}
+              value={question}
+              className="min-h-[80px] resize-none"
+              disabled={loading}
+            />
             <div className="h-4"></div>
-            <Button type="submit" disabled={loading}>
-              Ask TellGit!
+            <Button type="submit" disabled={loading || !question.trim()}>
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                  <span>Asking TellGit...</span>
+                </div>
+              ) : (
+                "Ask TellGit!"
+              )}
             </Button>
           </form>
         </CardContent>
