@@ -1,4 +1,5 @@
 "use client";
+import { Info } from "lucide-react";
 import React from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -16,33 +17,45 @@ type formInput = {
 const CreatePage = () => {
   const { register, handleSubmit, reset } = useForm<formInput>();
   const createProject = api.project.createProject.useMutation();
+  const checkCredits = api.project.checkCredits.useMutation();
   const refetch = useRefetch();
 
   const onSubmit = (data: formInput) => {
-    createProject.mutate(
-      {
-        projectName: data.projectName,
+    if (!!checkCredits.data) {
+      createProject.mutate(
+        {
+          projectName: data.projectName,
+          githubUrl: data.githubUrl,
+          githubToken: data.githubToken,
+        },
+        {
+          onSuccess: () => {
+            setTimeout(() => {
+              refetch();
+            }, 100);
+
+            toast.success(
+              "Project created successfully! Indexing in progress...",
+            );
+            reset();
+          },
+          onError: (error) => {
+            toast.error("Failed to create project: " + error.message);
+          },
+        },
+      );
+      return true;
+    } else {
+      checkCredits.mutate({
         githubUrl: data.githubUrl,
         githubToken: data.githubToken,
-      },
-      {
-        onSuccess: () => {
-          setTimeout(() => {
-            refetch();
-          }, 100);
-
-          toast.success(
-            "Project created successfully! Indexing in progress...",
-          );
-          reset();
-        },
-        onError: (error) => {
-          toast.error("Failed to create project: " + error.message);
-        },
-      },
-    );
-    return true;
+      });
+    }
   };
+
+  const hasEnoughCredits = checkCredits?.data?.userCredits
+    ? checkCredits.data.fileCount <= checkCredits.data.userCredits
+    : true;
 
   return (
     <div className="flex h-full w-full items-center justify-center gap-6">
@@ -85,12 +98,34 @@ const CreatePage = () => {
               {...register("githubToken")}
               placeholder="GitHub Token (optional)"
             />
+            {!!checkCredits.data && (
+              <>
+                <div className="mt-4 rounded-md border border-orange-200 bg-orange-50 px-4 py-2 text-orange-700">
+                  <div className="flex items-center gap-2">
+                    <Info className="size-4" />
+                    <p className="text-sm">
+                      You will be charged{" "}
+                      <strong>{checkCredits.data?.fileCount}</strong> credits
+                      for this repository.
+                    </p>
+                  </div>
+                  <p className="ml-6 text-sm text-blue-600">
+                    You have <strong>{checkCredits.data?.userCredits}</strong>{" "}
+                    credits remaining.
+                  </p>
+                </div>
+              </>
+            )}
             <Button
               type="submit"
               className="w-full"
-              disabled={createProject.isPending}
+              disabled={
+                createProject.isPending ||
+                !!checkCredits.isPending ||
+                !hasEnoughCredits
+              }
             >
-              Create Project
+              {!!checkCredits.data ? "Create Project" : "Check Credits"}
             </Button>
           </form>
         </div>

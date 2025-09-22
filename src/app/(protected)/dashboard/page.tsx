@@ -11,6 +11,9 @@ import CommitLog from "./commit-log";
 import AskQuestionCard from "./ask-question-card";
 import { api } from "~/trpc/react"; // Import the API
 import MeetingCard from "./meeting-card";
+import ArchiveButton from "./archive-button";
+import InviteButton from "./invite-button";
+import TeamMember from "./team-member";
 
 const DashboardPage = () => {
   const { project, projectId } = useProject();
@@ -41,7 +44,11 @@ const DashboardPage = () => {
           </div>
         </div>
         <div className="h-4"></div>
-        <div className="flex items-center gap-4">Tea</div>
+        <div className="flex items-center gap-4">
+          <TeamMember />
+          <InviteButton />
+          <ArchiveButton />
+        </div>
       </div>
       <div className="mt-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-5">
