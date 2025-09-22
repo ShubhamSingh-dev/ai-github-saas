@@ -173,24 +173,28 @@ const AskQuestionCard = () => {
         </DialogContent>
       </Dialog>
 
-      <Card className="relative col-span-3">
-        <CardHeader>
-          <CardTitle>Ask a question</CardTitle>
+      <Card className="relative col-span-3 flex h-[250px] flex-col">
+        <CardHeader className="flex-shrink-0 pb-3">
+          <CardTitle className="text-lg">Ask a question</CardTitle>
           <CardDescription className="text-muted-foreground text-sm">
             TellGit has knowledge of your codebase
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={onSubmit}>
+        <CardContent className="flex h-full flex-col pt-0">
+          <form onSubmit={onSubmit} className="flex h-full flex-col">
             <Textarea
               placeholder="Which file should I edit to change the home page?"
               onChange={(e) => setQuestion(e.target.value)}
               value={question}
-              className="min-h-[80px] resize-none"
+              className="min-h-[60px] flex-1 resize-none"
               disabled={loading}
             />
-            <div className="h-4"></div>
-            <Button type="submit" disabled={loading || !question.trim()}>
+            <div className="h-3"></div>
+            <Button
+              type="submit"
+              disabled={loading || !question.trim()}
+              className="mt-auto w-32"
+            >
               {loading ? (
                 <div className="flex items-center gap-2">
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
